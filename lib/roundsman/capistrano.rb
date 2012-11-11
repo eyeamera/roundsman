@@ -172,6 +172,7 @@ require 'tempfile'
 
       set_default :chef_version, "~> 0.10.8"
       set_default :cookbooks_directory, ["config/cookbooks"]
+      set_default :roles_directory, ['config/roles']
       set_default :copyfile_disable, false
       set_default :filter_sensitive_settings, [ /password/, /filter_sensitive_settings/ ]
 
@@ -211,6 +212,10 @@ require 'tempfile'
       def cookbooks_paths
         Array(fetch(:cookbooks_directory)).select { |path| File.exist?(path) }
       end
+      
+      def roles_paths
+        Array(fetch(:roles_directory)).select { |path| File.exist?(path) }
+      end
 
       def install_chef?
         required_version = fetch(:chef_version).inspect
@@ -220,10 +225,12 @@ require 'tempfile'
 
       def generate_config
         cookbook_string = cookbooks_paths.map { |c| "File.join(root, #{c.to_s.inspect})" }.join(', ')
+        role_string = roles_paths.map { |c| "File.join(root, #{c.to_s.inspect})" }.join(', ')
         solo_rb = <<-RUBY
           root = File.expand_path(File.dirname(__FILE__))
           file_cache_path File.join(root, "cache")
           cookbook_path [ #{cookbook_string} ]
+          role_path [ #{role_string} ]
         RUBY
         put solo_rb, roundsman_working_dir("solo.rb"), :via => :scp
       end
