@@ -189,6 +189,7 @@ require 'tempfile'
         generate_config
         generate_attributes
         copy_cookbooks
+        copy_roles
       end
 
       desc "Installs chef"
@@ -276,6 +277,19 @@ require 'tempfile'
           system "#{env_vars} tar -cjf #{tar_file.path} #{cookbooks_paths.join(' ')}"
           upload tar_file.path, roundsman_working_dir("cookbooks.tar"), :via => :scp
           run "cd #{roundsman_working_dir} && tar -xjf cookbooks.tar"
+        ensure
+          tar_file.unlink
+        end
+      end
+      
+      def copy_roles
+        tar_file = Tempfile.new("roles.tar")
+        begin
+          tar_file.close
+          env_vars = fetch(:copyfile_disable) && RUBY_PLATFORM.downcase.include?('darwin') ? "COPYFILE_DISABLE=true" : ""
+          system "#{env_vars} tar -cjf #{tar_file.path} #{roles_paths.join(' ')}"
+          upload tar_file.path, roundsman_working_dir("roles.tar"), :via => :scp
+          run "cd #{roundsman_working_dir} && tar -xjf roles.tar"
         ensure
           tar_file.unlink
         end
